@@ -28,7 +28,6 @@ export async function SignUp(UserCredential:SignUpParams){
 const {uid,name,email} = UserCredential
     try {
     const getUser = await db.collection('users').doc(uid).get()
-    console.log(getUser)
     if(getUser.exists) {
         return{
             success:false,
@@ -91,7 +90,6 @@ export async function getUserAuth() : Promise<User | null> {
 
     const cookieStore = await cookies()
     const sessionId = cookieStore.get("session")?.value
-    console.log(sessionId)
     if(!sessionId) return null
     try {
         
@@ -101,7 +99,8 @@ export async function getUserAuth() : Promise<User | null> {
         if(!checkUser.exists) return null
 
         return{
-           ...checkUser.data()
+           ...checkUser.data(),
+           id:checkUser.id,
         } as User
 
     } catch (error) {
@@ -118,3 +117,5 @@ export async function isAuthenticated() {
     return !!isAuthCheck
 
 }
+
+

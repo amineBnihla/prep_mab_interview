@@ -43,7 +43,7 @@ const InterviewCard = ({
         <div className="flex justify-between">
           <TechStackIcons techStack={techstack} />
          <button className="btn-primary">
-           <Link href={feedback ? `/interviews/${interviewId}/feedback` : `/interviews/${interviewId}`}>
+           <Link href={feedback ? `/Interviews/${interviewId}/feedback` : `/Interview/${interviewId}`}>
             {feedback ? "Check Feedback" : "View Questions"}
             </Link>
          </button>

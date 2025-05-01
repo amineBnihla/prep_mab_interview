@@ -1,6 +1,8 @@
 
 import {generateText} from "ai"
 import { google } from "@ai-sdk/google"
+
+
 import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 export async function GET() {
@@ -13,22 +15,45 @@ export async function POST(request: Request) {
   const {role,type,level,techstack, amount, userid } = await request.json()
 
   try {
-    const { text } = await generateText({
-model: google("gemini-2.0-flash-001"),
-prompt: `Prepare questions for a job interview.
-        The job role is ${role}.
-        The job experience level is ${level}.
-        The tech stack used in the job is: ${techstack}.
-        The focus between behavioural and technical questions should lean towards: ${type}.
-        The amount of questions required is: ${amount}.
-        Please return only the questions, without any additional text.
-        The questions are going to be read by a voice assistant so do not use "/" or "*" or any other special characters which might break the voice assistant.
-        Return the questions formatted like this:
-        ["Question 1", "Question 2", "Question 3"]
-        
-        Thank you! <3`
-})
+    const { text:questions } = await generateText({
+model: google("gemini-1.5-pro-latest"),
+prompt: `You are an assistant that only outputs valid JSON arrays.
+Prepare interview questions based on the following information:
+The job role is: ${role}.
+The experience level is: ${level}.
+The tech stack is: ${techstack}.
+The focus between behavioral and technical questions is: ${type}.
+The number of questions to generate: ${amount}.
 
+IMPORTANT:
+- Return ONLY a valid JSON array of strings, no markdown formatting.
+- DO NOT wrap the array inside any quotes.
+- DO NOT add any extra characters like \\, \\n, /, or special characters.
+- Example output: ["Question 1", "Question 2", "Question 3"]
+
+No explanation, no formatting, just pure JSON array.
+`
+})
+console.log(questions,JSON.parse(questions))
+  
+    let cleanedQuestions = questions.trim();
+
+// First parse outer quotes if necessary
+if (cleanedQuestions.startsWith('"') && cleanedQuestions.endsWith('"')) {
+  cleanedQuestions = JSON.parse(cleanedQuestions);
+}
+
+// Then parse the real array
+const questionsArray = JSON.parse(cleanedQuestions);
+    try {
+
+      if (!Array.isArray(questionsArray)) {
+        throw new Error('Parsed result is not an array');
+      }
+    } catch (e) {
+      console.error('Failed to parse questions correctly', e);
+      return new Response("Invalid questions format", { status: 400 });
+    }
 const interview = {
       role: role,
     type: type,
@@ -37,7 +62,7 @@ const interview = {
     amount: amount,
     finalized:true,
     coverImage:getRandomInterviewCover(),
-    questions: JSON.stringify(text),
+    questions: questionsArray,
     createdAt: new Date().toISOString(),
     userid: userid,
 }
